@@ -25,7 +25,7 @@ uint32_t kWhDayAll;
 uint32_t kWhDayAllERROM;
 uint32_t kWhNightAll;
 uint32_t kWhNightAllERROM;
-char auth[] = "f1048f2e9489400e8ed231b9cead1d41";
+char auth[] = "you_token";
 float tarifD; // цена на дневное ЭЭ введённая на телефоне
 float tarifN; // цена на ночное ЭЭ введённая на телефоне
 int TimeD;  // время перехода на день
