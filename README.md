@@ -22,9 +22,9 @@
 
 Вид приложениия<a name="id2"></a>
 --------------------
-![Программа](https://github.com/dodther/-/blob/master/Energy.JPG)
-![График](https://github.com/dodther/-/blob/master/%D0%93%D1%80%D0%B0%D1%84%D0%B8%D0%BA.JPG)
-![Настройки](https://github.com/dodther/-/blob/master/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.jpg)
+![Программа](https://github.com/dodther/-/blob/master/images/Energy.JPG)
+![График](https://github.com/dodther/-/blob/master/images/%D0%93%D1%80%D0%B0%D1%84%D0%B8%D0%BA.JPG)
+![Настройки](https://github.com/dodther/-/blob/master/images/%D0%9D%D0%B0%D1%81%D1%82%D1%80%D0%BE%D0%B9%D0%BA%D0%B8.jpg)
 
 
 Необходимые компоненты<a name="id3"></a>
@@ -56,6 +56,6 @@ W5100           | 1шт         | Сеть
 GND - GND  
 А VCC подключается через инвертор на полевых транзисторах. Это сделано для возможности отключать питания порта передачи данных. Так как сброс показаний возможен только когда прерван обмен данными. А при питании напрямую от ноги ардуины слишком поздно появляется высокий уровень и датчик не успевает инициализороватся.  
 
-![Схема подключения](https://github.com/dodther/Energomonitor/blob/master/%D0%A1%D1%85%D0%B5%D0%BC%D0%B0.png)
+![Схема подключения](https://github.com/dodther/Energomonitor/blob/master/images/%D0%A1%D1%85%D0%B5%D0%BC%D0%B0.png)
 
 
