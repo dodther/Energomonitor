@@ -6,7 +6,6 @@
 #include <TimeLib.h>
 #include <EthernetUdp.h>
 #include <EEPROM.h>
-#include <BlynkSimpleEthernet.h>
 #define W5100_CS  10
 int intConnect;
 PZEM004T pzem(4,5);  // (RX,TX) connect to TX,RX of PZEM
