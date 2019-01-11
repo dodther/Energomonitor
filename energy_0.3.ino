@@ -6,13 +6,14 @@
 #include <TimeLib.h>
 #include <EthernetUdp.h>
 #include <EEPROM.h>
-
+#include <BlynkSimpleEthernet.h>
 #define W5100_CS  10
-
+int intConnect;
 PZEM004T pzem(4,5);  // (RX,TX) connect to TX,RX of PZEM
 IPAddress ip[3];
 uint8_t ports[3][5] ={{0,1,2,13,3},{4,5,6,14,7},{8,9,10,15,11}}; // номера портов в массив. по время перебора будут в блинк улетать
 
+BlynkTimer timer;
 
 byte FullReset = 0; 
 byte DN; // параметр День1, ночь0
@@ -26,6 +27,10 @@ uint32_t kWhDayAllERROM;
 uint32_t kWhNightAll;
 uint32_t kWhNightAllERROM;
 char auth[] = "you_token";
+// мак должен быть разный для всех устройств в локальной сети
+byte arduino_mac[] = { 0xDE, 0xED, 0xBA, 0xFE, 0xFE, 0xDD };
+char server[]          = "blynk-cloud.com";
+unsigned int port      = 8442;
 float tarifD; // цена на дневное ЭЭ введённая на телефоне
 float tarifN; // цена на ночное ЭЭ введённая на телефоне
 int TimeD;  // время перехода на день
@@ -53,7 +58,14 @@ void setup() {
   pinMode(19, OUTPUT); // управление питанием дачиков
 
   Serial.begin(9600);
-  Blynk.begin(auth);
+  // В файле библиотеки Ethernet.h  82 строка. заменил константу timeout с 60000 на 10000. Чтобы быстрее думало при 
+  // попытке получить адресс без воткнутого кабеля.
+  intConnect = Ethernet.begin(arduino_mac); 
+  //Serial.println(intConnect);
+  Serial.println(Ethernet.localIP());
+  Blynk.config(auth, server, port);
+  Blynk.connect();
+  //Blynk.begin(auth);
   ip[0] = IPAddress(192, 168, 1, 1);
   ip[1] = IPAddress(192, 168, 1, 2);
   ip[2] = IPAddress(192, 168, 1, 3);
@@ -69,13 +81,20 @@ void setup() {
   setSyncProvider(getNtpTime);  // это для часов реального времени
 
   setSyncInterval(10 *60); // Sync interval in seconds (10 minutes) // это для часов реального времени
- //  timer.setInterval(10000, resetDN);
+  timer.setInterval(60000L, CheckConnection); 
+  
 }
 
 
 void loop() {
  
-   Blynk.run(); 
+    if(Blynk.connected()){
+    Blynk.run();
+    }
+   timer.run();
+
+
+    
    if(ResetWh == 0){
       readEnergy();
     }else
@@ -85,6 +104,16 @@ void loop() {
 
 
 
+}
+
+void CheckConnection(){    // check every 11s if connected to Blynk server
+  if(!Blynk.connected()){
+    Serial.println("Not connected to Blynk server"); 
+    if(intConnect == 0) intConnect = Ethernet.begin(arduino_mac);
+    bool isFirstConnect = true;
+    Blynk.connect();  // try to connect to server with default timeout
+  }
+  
 }
 
 
@@ -149,17 +178,11 @@ float ReactivePower(float arr[3]) // считаем сколько Вт реак
 
 void MomentCost(){
   float tarifM;
-  if(DN == 1)  tarifM = tarifD;
-  if(DN == 0)  tarifM = tarifN;
+  if(DN == 1)  {tarifM = tarifD;} else {tarifM = tarifN;}
   float cost = ((vipe[0][2] + vipe[1][2] + vipe[2][2])/1000)*tarifM;
   Blynk.virtualWrite(16,cost); // убрать "/3". так как у меня все 3 одну замеряют на время отладки сделал так
 }
 
-void NeedPay(){
-  float pay = ((vipe[0][3] + vipe[1][3] + vipe[2][3])/1000)*tarifD;
-  Blynk.virtualWrite(17,pay);// убрать "/3". так как у меня все 3 одну замеряют на время отладки сделал так
- //Serial.print("day "); Serial.print(tarifD); Serial.print(" night ");  Serial.println(tarifN);
-}
 
 void kWhDayUpdate(){
   //Serial.print(kWhDayAllERROM); Serial.print("  "); Serial.println(kWhNightAllERROM);
@@ -279,16 +302,15 @@ if (millis() - LstRd1 > RdDly )
       Ncycle1 = 0;
       LstRd1 = 0;
       MomentCost(); // ткнём пока сюда
-     // NeedPay();
       DayToNight();
       NightToDay();
-      kWhAll();
       Money();
       if(DN == 1)kWhDayUpdate();
       if(DN == 0)kWhNightUpdate();
+      kWhAll();
       //digitalClockDisplay();
-     // Serial.println(hour());
-     // Serial.println("--------------------------------------------------");
+     //Serial.print(hour());Serial.print(":");Serial.println(minute());
+     //Serial.println("--------------------------------------------------");
     }
    
    // ..
@@ -304,7 +326,7 @@ void ResetWatH(){
   {
     switch(NcycleWh){
       case 1:
-         Serial.println("-------------------Reset start-------------------");
+         Serial.println("Reset start");
          digitalWrite(19, HIGH); // отрубаем питание датчика
          RdDlyWh = 200; // delay(200);
       break;
@@ -329,14 +351,14 @@ void ResetWatH(){
          ResetWh = 0;
          NcycleWh = 0;
          if(FullReset == 1){
-              Serial.println("-------------------Full Reset-------------------");
+              Serial.println("Full Reset");
               kWhDayAll = 0; kWhNightAll = 0; kWhDayAllERROM = 0; kWhNightAllERROM = 0;
               Blynk.virtualWrite(V22,float(0)); Blynk.virtualWrite(V23,float(0)); Blynk.virtualWrite(V24,float(0));
               EEPROM.put(dAdresse,kWhDayAll);
               EEPROM.put(nAdresse,kWhNightAll);
               FullReset = 0;
          }
-         Serial.println("-------------------Reset stop-------------------");
+         Serial.println("Reset stop");
                    }
       NcycleWh++; LstRdWh = millis(); 
   
