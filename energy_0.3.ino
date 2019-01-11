@@ -12,7 +12,7 @@ PZEM004T pzem(4,5);  // (RX,TX) connect to TX,RX of PZEM
 IPAddress ip[3];
 uint8_t ports[3][5] ={{0,1,2,13,3},{4,5,6,14,7},{8,9,10,15,11}}; // номера портов в массив. по время перебора будут в блинк улетать
 
-BlynkTimer timer;
+//BlynkTimer timer;
 
 byte FullReset = 0; 
 byte DN; // параметр День1, ночь0
@@ -36,7 +36,8 @@ int TimeD;  // время перехода на день
 int TimeN;  // время перехода на ночь
 float vipe[3][4];
 
-
+unsigned long ChkConn =0; // переменная для проверки сколько времени прошло с момента последней попытки подключения к серверу блинка
+unsigned long TimeChkConn = 60000; // време для повторной проверки соединения с сервером блинк.
 unsigned long LstRd1 =0;  
 byte Ncycle1 = 1;
 byte ResetWh = 0; // флаг для запуска функции сброса показания ватт. при 0 сброса нет, 1 - сброс
@@ -80,7 +81,7 @@ void setup() {
   setSyncProvider(getNtpTime);  // это для часов реального времени
 
   setSyncInterval(10 *60); // Sync interval in seconds (10 minutes) // это для часов реального времени
-  timer.setInterval(60000L, CheckConnection); 
+  //timer.setInterval(60000L, CheckConnection); 
   
 }
 
@@ -90,7 +91,7 @@ void loop() {
     if(Blynk.connected()){
     Blynk.run();
     }
-   timer.run();
+//   timer.run();
 
 
     
@@ -101,16 +102,18 @@ void loop() {
       ResetWatH();
    }
 
-
+   CheckConnection();
 
 }
 
 void CheckConnection(){    // check every 11s if connected to Blynk server
-  if(!Blynk.connected()){
+  if(!Blynk.connected() && (millis()-ChkConn) > TimeChkConn ){
+  
     Serial.println("Not connected to Blynk server"); 
     if(intConnect == 0) intConnect = Ethernet.begin(arduino_mac);
     bool isFirstConnect = true;
     Blynk.connect();  // try to connect to server with default timeout
+    ChkConn = millis();
   }
   
 }
